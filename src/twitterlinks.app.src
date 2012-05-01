@@ -1,11 +1,13 @@
 {application, twitterlinks,
  [
-  {description, ""},
+  {description, "A Twitter to Delicious sync app"},
   {vsn, "1"},
   {registered, []},
   {applications, [
                   kernel,
                   stdlib,
+                  public_key,
+                  crypto,
                   ssl,
                   inets
                  ]},
