@@ -33,7 +33,7 @@ middleman.
 
 ## Creating a release
 
-   make release
+    make release
 
 This creates a release of twitterlinks into `rel/twitterlinks`
 
@@ -47,5 +47,5 @@ Fill in the stream_url and delicious properties with your own values.
 
 ## Running
 
-   cd rel/twitterlinks
-   ./bin/twitterlinks start
+    cd rel/twitterlinks
+    ./bin/twitterlinks start
