@@ -10,7 +10,7 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([start_link/2]).
+-export([start_link/2, add_url/4]).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Exports
@@ -28,6 +28,8 @@
 start_link(Username, Password) ->
     gen_server:start_link(?MODULE, [Username, Password], []).
 
+add_url(ServerPid, Url, Description, TagList) ->
+    gen_server:call(ServerPid, {add_url, {Url, Description, TagList}}).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
@@ -68,7 +70,7 @@ build_add_request(Url, Description, TagList, Username, Password) ->
     Body = urlencode_list([{"url", Url},
                            {"description", Description},
                            {"tags", string:join(TagList, ",")}]),
-    [ServiceUrl, [], "application/x-www-form-urlencoded", Body].
+    {ServiceUrl, [], "application/x-www-form-urlencoded", Body}.
 
 
 -ifdef(TEST).
@@ -80,9 +82,9 @@ urlencode_list_test() ->
     ?assertEqual(Expected, Result).
 
 build_add_request_test() ->
-    Expected = ["https://ericmoritz:test@api.del.icio.us/v1/posts/add",
+    Expected = {"https://ericmoritz:test@api.del.icio.us/v1/posts/add",
                 [], "application/x-www-form-urlencoded",
-                "url=http%3A%2F%2Fexample.com&description=this%20is%20the%20description&tags=foo%2Cbar"],
+                "url=http%3A%2F%2Fexample.com&description=this%20is%20the%20description&tags=foo%2Cbar"},
 
     Result = build_add_request("http://example.com",
                                "this is the description",
