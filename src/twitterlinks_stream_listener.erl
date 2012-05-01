@@ -34,7 +34,7 @@ start_link(MiddlemanPid, Url) ->
 
 init([MiddlemanPid, Url]) ->
     NewTweetCallback = fun(TweetJSONBin) ->
-                               twitterlinks_tweet_middleman:new_tweet(MiddlemanPid,
+                               twitterlinks_middleman:new_tweet(MiddlemanPid,
                                                                       TweetJSONBin)
                        end,
     {ok, ReqId} = start_stream(Url),
