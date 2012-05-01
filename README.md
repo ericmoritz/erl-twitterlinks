@@ -31,23 +31,21 @@ The delicious and twitter services are linked to their middleman, if
 they die, they kill their middleman and its supervisor restarts the
 middleman.
 
-## Building
-
-    ./rebar get-deps
-    ./rebar compile
-
 ## Creating a release
 
-    cd rel
-    ../rebar generate
+   make release
+
+This creates a release of twitterlinks into `rel/twitterlinks`
 
 ## Configuring
 
 After creating a release, you will need to configure it
 
-    cd rel/twitterlinks
-    $EDITOR releases/1/sys.config 
+    $EDITOR rel/twitterlinks/releases/1/sys.config 
 
 Fill in the stream_url and delicious properties with your own values.
 
+## Running
 
+   cd rel/twitterlinks
+   ./bin/twitterlinks start
