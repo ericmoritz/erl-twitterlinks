@@ -9,7 +9,8 @@
                   public_key,
                   crypto,
                   ssl,
-                  inets
+                  inets,
+		  struct
                  ]},
   {mod, { twitterlinks_app, []}},
   {env, []}

@@ -31,26 +31,23 @@ The delicious and twitter services are linked to their middleman, if
 they die, they kill their middleman and its supervisor restarts the
 middleman.
 
-## Running
-
-At the moment, there is no easy way to launch these application.  I
-have to investigate how to package up an Erlang application.
-
-For now, the process is manual.  First, copy sample.config and fill in
-your values.
-
-Second, build the application:
+## Building
 
     ./rebar get-deps
     ./rebar compile
 
-Third, run the Erlang console:
+## Creating a release
 
-    erl -pa ebin -pa deps/*/ebin -s ssl -s inets -config your.config
+    cd rel
+    ../rebar generate
 
-At the prompt, execute:
-    
-    application:start(twitterlinks).
+## Configuring
 
+After creating a release, you will need to configure it
+
+    cd rel/twitterlinks
+    $EDITOR releases/1/sys.config 
+
+Fill in the stream_url and delicious properties with your own values.
 
 
