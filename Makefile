@@ -1,6 +1,6 @@
-all: deps compile
+all: compile
 
-compile:
+compile: deps
 	./rebar compile
 
 deps:
