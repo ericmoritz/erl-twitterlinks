@@ -24,12 +24,12 @@ start_link() ->
 %% ===================================================================
 
 init(_) ->
-    {ok, StreamUrl} = application:get_env(twitterlinks, stream_url),
-    {ok, {DelUsername, DelPassword}} = application:get_env(twitterlinks, delicious),
+    {ok, TwitterSettings} = application:get_env(twitterlinks, twitter),
+    {ok, DeliciousSettings} = application:get_env(twitterlinks, delicious),
 
     {ok, { {one_for_one, 5, 10}, [
                                   ?CHILD(twitterlinks_middleman_sup, supervisor,
-                                         [StreamUrl, DelUsername, DelPassword])
+                                         [TwitterSettings, DeliciousSettings])
 
                                  ] }}.
 

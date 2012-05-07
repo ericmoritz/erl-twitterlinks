@@ -10,7 +10,7 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([start_link/2, add_url/4]).
+-export([start_link/1, add_url/4]).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Exports
@@ -25,7 +25,7 @@
 %% API Function Definitions
 %% ------------------------------------------------------------------
 
-start_link(Username, Password) ->
+start_link({Username, Password}) ->
     gen_server:start_link(?MODULE, [Username, Password], []).
 
 add_url(ServerPid, Url, Description, TagList) ->

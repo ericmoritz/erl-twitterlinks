@@ -11,7 +11,7 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([start_link/2, start_stream/1]).
+-export([start_link/2, start_stream/3]).
 -record(state, {middleman, url, request_id, new_tweet_callback}).
 
 %% ------------------------------------------------------------------
@@ -25,20 +25,20 @@
 %% API Function Definitions
 %% ------------------------------------------------------------------
 
-start_link(MiddlemanPid, Url) ->
-    gen_server:start_link(?MODULE, [MiddlemanPid, Url], []).
+start_link(MiddlemanPid, {Username, Password, UserId}) ->
+    gen_server:start_link(?MODULE, [MiddlemanPid, Username, Password, UserId], []).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
 %% ------------------------------------------------------------------
 
-init([MiddlemanPid, Url]) ->
+init([MiddlemanPid, Username, Password, UserId]) ->
     NewTweetCallback = fun(TweetJSONBin) ->
                                twitterlinks_middleman:new_tweet(MiddlemanPid,
                                                                       TweetJSONBin)
                        end,
-    {ok, ReqId} = start_stream(Url),
-    {ok, #state{url=Url, request_id=ReqId, new_tweet_callback=NewTweetCallback}}.
+    {ok, ReqId} = start_stream(Username, Password, UserId),
+    {ok, #state{request_id=ReqId, new_tweet_callback=NewTweetCallback}}.
 
 handle_call(_Msg, _From, State) ->
     {noreply, State}.
@@ -60,7 +60,7 @@ handle_info({http, {_, stream_end, _}}, State) ->
     % TODO: start the stream again
     {stop, stream_end, State};
 handle_info(Msg, State) ->
-    io:format("Unknown Message: ~w", [Msg]),
+    io:format("Unknown Message: ~p~n", [Msg]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->
@@ -74,10 +74,14 @@ code_change(_OldVsn, State, _Extra) ->
 %% Internal Function Definitions
 %% ------------------------------------------------------------------
 
-start_stream(Url) ->
-    io:format("Starting Stream ~s~n", [Url]),
+start_stream(Username, Password, UserId) when is_integer(UserId) ->
+    Url = "https://stream.twitter.com/1/statuses/filter.json?follow=" ++ integer_to_list(UserId),
+    Headers = [twitterlinks_misc:http_auth_header(basic, Username, Password)],
+
+    io:format("Starting Stream ~s ~p ~n", [Url, Headers]),
+    
     % start the stream
-    httpc:request(get, {Url, []},
+    httpc:request(get, {Url, Headers},
                   [], [{sync, false}, {stream, self}]).
 
 

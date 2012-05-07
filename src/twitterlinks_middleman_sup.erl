@@ -4,7 +4,7 @@
 -behaviour(supervisor).
 
 %% API
--export([start_link/3]).
+-export([start_link/2]).
 
 %% Supervisor callbacks
 -export([init/1]).
@@ -16,15 +16,15 @@
 %% API functions
 %% ===================================================================
 
-start_link(StreamUrl, DelUsername, DelPassword) ->
-    supervisor:start_link({local, ?MODULE}, ?MODULE, [StreamUrl, DelUsername, DelPassword]).
+start_link(TwitterSettings, DeliciousSettings) ->
+    supervisor:start_link({local, ?MODULE}, ?MODULE, [TwitterSettings, DeliciousSettings]).
 
 %% ===================================================================
 %% Supervisor callbacks
 %% ===================================================================
 
-init([StreamUrl, DelUsername, DelPassword]) ->
+init([TwitterSettings, DeliciousSettings]) ->
     {ok, { {one_for_one, 5, 10}, [
-                                  ?CHILD(twitterlinks_middleman, worker, [StreamUrl, DelUsername, DelPassword])
+                                  ?CHILD(twitterlinks_middleman, worker, [TwitterSettings, DeliciousSettings])
                                  ]}}.
 

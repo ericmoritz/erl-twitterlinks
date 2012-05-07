@@ -10,7 +10,7 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([start_link/3, new_tweet/2]).
+-export([start_link/2, new_tweet/2]).
 
 -record(state, {add_url_callback}).
 
@@ -25,8 +25,8 @@
 %% API Function Definitions
 %% ------------------------------------------------------------------
 
-start_link(StreamUrl, DelUsername, DelPassword) ->
-    gen_server:start_link(?MODULE, [StreamUrl, DelUsername, DelPassword], []).
+start_link(TwitterSettings, DeliciousSettings) ->
+    gen_server:start_link(?MODULE, [TwitterSettings, DeliciousSettings], []).
 
 new_tweet(ServerPid, TweetJSONBin) ->
    gen_server:call(ServerPid, {tweet, TweetJSONBin}).
@@ -35,9 +35,9 @@ new_tweet(ServerPid, TweetJSONBin) ->
 %% gen_server Function Definitions
 %% ------------------------------------------------------------------
 
-init([StreamUrl, DelUsername, DelPassword]) ->
-    {ok, DelPid} = twitterlinks_delicious_service:start_link(DelUsername, DelPassword),
-    twitterlinks_stream_listener:start_link(self(), StreamUrl),
+init([TwitterSettings, DeliciousSettings]) ->
+    {ok, DelPid} = twitterlinks_delicious_service:start_link(DeliciousSettings),
+    twitterlinks_stream_listener:start_link(self(), TwitterSettings),
 
     AddUrlCallback = fun(Url, Description, Tags) ->
                              twitterlinks_delicious_service:add_url(DelPid, Url, Description, Tags)
