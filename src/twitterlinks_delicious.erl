@@ -1,5 +1,7 @@
--module(twitterlinks_delicious_service).
+-module(twitterlinks_delicious).
+
 -behaviour(gen_server).
+
 -define(SERVER, ?MODULE).
 
 -ifdef(TEST).
@@ -10,7 +12,7 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([start_link/1, add_url/4]).
+-export([start_link/3, create/3, publish_url/4]).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Exports
@@ -19,31 +21,44 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
--record(state, {username, password}).
+-record(state, {account_id, username, password}).
 
 %% ------------------------------------------------------------------
 %% API Function Definitions
 %% ------------------------------------------------------------------
 
-start_link({Username, Password}) ->
-    gen_server:start_link(?MODULE, [Username, Password], []).
+start_link(AccountId, Username, Password) ->
+    gen_server:start_link(?MODULE, [AccountId, Username, Password], []).
 
-add_url(ServerPid, Url, Description, TagList) ->
-    gen_server:call(ServerPid, {add_url, {Url, Description, TagList}}).
+create(AccountId, Username, Password) ->
+    {ok, Pid} = twitterlinks_delicious_sup:start_child(AccountId, Username, Password),
+    twitterlinks_delicious_store:insert(AccountId, Pid),
+    {ok, Pid}.
+
+publish_url(AccountId, Url, Description, TagList) ->
+    case twitterlinks_delicious_store:lookup(AccountId) of
+        {ok, Pid} ->
+            gen_server:cast(Pid, {publish_url, {Url, Description, TagList}});
+        {error, not_found} ->
+            % This could happen if the delicous service dies
+            {error, delicious_service_down}
+    end.
 
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
 %% ------------------------------------------------------------------
 
-init([Username, Password]) ->
-    {ok, #state{username=Username, password=Password}}.
+init([AccountId, Username, Password]) ->
+    {ok, #state{account_id=AccountId, username=Username, password=Password}}.
 
-handle_call({add_url, {Url, Description, TagList}}, _From, State) ->
+handle_call(_Msg, _From, State) ->
+    {noreply, State}.
+
+handle_cast({publish_url, {Url, Description, TagList}}, State) ->
     Request = build_add_request(Url, Description, TagList,
                                 State#state.username, State#state.password),
-    Result = httpc:request(post, Request, [],[]),
-    {reply, Result, State}.
-
+    _Result = httpc:request(post, Request, [],[]),
+    {noreply, State};
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
@@ -51,6 +66,7 @@ handle_info(_Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
+    twitterlinks_delicious_store:delete(self()),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
@@ -65,12 +81,12 @@ urlencode_list(Params) ->
                             Params), "&").
 
 build_add_request(Url, Description, TagList, Username, Password) ->
-    ServiceUrl = "https://" ++ Username ++ ":" ++ Password ++
-        "@api.del.icio.us/v1/posts/add",
+    ServiceUrl = "https://api.del.icio.us/v1/posts/add",
+    Headers = [twitterlinks_misc:http_auth_header(basic, Username, Password)],    
     Body = urlencode_list([{"url", Url},
                            {"description", Description},
                            {"tags", string:join(TagList, ",")}]),
-    {ServiceUrl, [], "application/x-www-form-urlencoded", Body}.
+    {ServiceUrl, Headers, "application/x-www-form-urlencoded", Body}.
 
 
 -ifdef(TEST).
@@ -82,8 +98,9 @@ urlencode_list_test() ->
     ?assertEqual(Expected, Result).
 
 build_add_request_test() ->
-    Expected = {"https://ericmoritz:test@api.del.icio.us/v1/posts/add",
-                [], "application/x-www-form-urlencoded",
+    Expected = {"https://api.del.icio.us/v1/posts/add",
+                [{"Authentication", "Basic ZXJpY21vcml0ejp0ZXN0"}],
+                "application/x-www-form-urlencoded",
                 "url=http%3A%2F%2Fexample.com&description=this%20is%20the%20description&tags=foo%2Cbar"},
 
     Result = build_add_request("http://example.com",

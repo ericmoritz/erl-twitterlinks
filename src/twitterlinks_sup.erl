@@ -24,12 +24,9 @@ start_link() ->
 %% ===================================================================
 
 init(_) ->
-    {ok, TwitterSettings} = application:get_env(twitterlinks, twitter),
-    {ok, DeliciousSettings} = application:get_env(twitterlinks, delicious),
+    DeliciousSup = ?CHILD(twitterlinks_delicious_sup, supervisor, []),
+    TwitterSup = ?CHILD(twitterlinks_twitter_sup, supervisor, []),
 
-    {ok, { {one_for_one, 5, 10}, [
-                                  ?CHILD(twitterlinks_middleman_sup, supervisor,
-                                         [TwitterSettings, DeliciousSettings])
-
-                                 ] }}.
-
+    Children = [DeliciousSup, TwitterSup],
+    RestartStrategy = {one_for_one, 4, 3600},
+    {ok, {RestartStrategy, Children}}.
