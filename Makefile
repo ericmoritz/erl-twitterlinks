@@ -14,3 +14,6 @@ test:
 
 demo: compile
 	erl -pa deps/*/ebin apps/*/ebin -boot start_sasl -s twitterlinks -config test
+
+rel:
+	rebar generate
