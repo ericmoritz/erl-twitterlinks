@@ -1,6 +1,6 @@
 # Twitter Link Processor
 
-This is an application that listens for tweets from your fire hose and
+This is an application that listens for tweets from your firehose and
 publishes the links to delicious.
 
 ## Architecture
@@ -15,8 +15,8 @@ PIDs by account id.
     [TL] = twitterlinks_sup supervisor
     [TW] = twitterlinks_twitter_sup supervisor
     [DL] = twitterlinks_delicious_sup supervisor
-    (TW) = twitterlinks_twitter worker
-    (DL) = twitterlinks_delicious worker
+    (TW) = twitterlinks_twitter workers
+    (DL) = twitterlinks_delicious workers
 
       [TL]
       /  \
@@ -26,21 +26,6 @@ PIDs by account id.
     (DL) (TW)
 
 
-## Creating a release
+## Run demo
 
-    make release
-
-This creates a release of twitterlinks into `rel/twitterlinks`
-
-## Configuring
-
-After creating a release, you will need to configure it
-
-    $EDITOR rel/twitterlinks/releases/1/sys.config 
-
-Fill in the appropriate values
-
-## Running
-
-    cd rel/twitterlinks
-    ./bin/twitterlinks start
+   make demo

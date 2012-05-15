@@ -1,17 +1,16 @@
 all: compile
 
-compile: deps
-	./rebar compile
+compile: getdeps
+	rebar compile
 
-deps:
-	./rebar get-deps
-
-release: compile
-	# I'm not sure why I have to go into rel but I do
-	cd rel && ../rebar generate
+getdeps:
+	rebar get-deps
 
 clean:
-	./rebar clean
+	rebar clean
 
-demo:
+test:
+	rebar eunit skip_deps=true
+
+demo: compile
 	erl -pa deps/*/ebin apps/*/ebin -boot start_sasl -s twitterlinks -config test
