@@ -1,4 +1,4 @@
--module(twitterlinks_stream_listener).
+-module(twitterlinks_twitter).
 -behaviour(gen_server).
 -define(SERVER, ?MODULE).
 
@@ -11,8 +11,8 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([start_link/2, start_stream/3]).
--record(state, {middleman, url, request_id, new_tweet_callback}).
+-export([start_link/4, create/4, start_stream/3]).
+-record(state, {account_id, request_id, user_id}).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Exports
@@ -25,20 +25,20 @@
 %% API Function Definitions
 %% ------------------------------------------------------------------
 
-start_link(MiddlemanPid, {Username, Password, UserId}) ->
-    gen_server:start_link(?MODULE, [MiddlemanPid, Username, Password, UserId], []).
+start_link(AccountId, Username, Password, UserId) ->
+    gen_server:start_link(?MODULE, [AccountId, Username, Password, UserId], []).
+
+create(AccountId, Username, Password, UserId) ->
+    twitterlinks_twitter_sup:start_child(AccountId,
+                                         Username, Password, UserId).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
 %% ------------------------------------------------------------------
 
-init([MiddlemanPid, Username, Password, UserId]) ->
-    NewTweetCallback = fun(TweetJSONBin) ->
-                               twitterlinks_middleman:new_tweet(MiddlemanPid,
-                                                                      TweetJSONBin)
-                       end,
+init([AccountId, Username, Password, UserId]) ->
     {ok, ReqId} = start_stream(Username, Password, UserId),
-    {ok, #state{request_id=ReqId, new_tweet_callback=NewTweetCallback}}.
+    {ok, #state{account_id=AccountId, user_id=UserId, request_id=ReqId}}.
 
 handle_call(_Msg, _From, State) ->
     {noreply, State}.
@@ -47,24 +47,26 @@ handle_cast(_Msg, State) ->
     {noreply, State}.
 
 handle_info({http, {_ReqId, stream_start, _Headers}}, State) ->
-    io:format("stream listener: stream started~n", []),
+    error_logger:info_msg("stream listener: stream started~n", []),
     {noreply, State};
 handle_info({http, {_, stream, <<"\r\n">>}}, State) ->
     % Twitter Heartbeat
     {noreply, State};
-handle_info({http, {_, stream, BinBodyPart}}, State=#state{new_tweet_callback=NewTweetCallback}) ->
-    io:format("stream listener: new tweet~n", []),
-    NewTweetCallback(BinBodyPart),
+handle_info({http, {_, stream, TweetJSON}}, State) ->
+    error_logger:info_msg("stream listener: new tweet:~n ~s~n", [TweetJSON]),
+    twitterlinks:publish_tweet(State#state.account_id,
+                               State#state.user_id,
+                               TweetJSON),
     {noreply, State};
 handle_info({http, {_, stream_end, _}}, State) ->
     % TODO: start the stream again
+    error_logger:info_msg("stream stopped."),
     {stop, stream_end, State};
 handle_info(Msg, State) ->
-    io:format("Unknown Message: ~p~n", [Msg]),
+    error_logger:warning_msg("Unknown Message: ~p~n", [Msg]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->
-    % TODO: close the httpc connection
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
@@ -86,21 +88,5 @@ start_stream(Username, Password, UserId) when is_integer(UserId) ->
 
 
 -ifdef(TEST).
-
-stream_start_test() ->
-    Expected = {noreply, state},
-    Result = handle_info({http, {reqid, stream_start, headers}}, state),
-    ?assertEqual(Expected, Result).
-
-stream_test() ->
-    MockCallback = fun(Data) -> ?assertEqual("dummy tweet", Data) end,
-    State = #state{new_tweet_callback=MockCallback},
-    Result = handle_info({http, {reqid, stream, "dummy tweet"}}, State),
-    ?assertEqual(Result, {noreply, State}).
-
-stream_end_test() ->
-    Expected = {stop, stream_end, state},
-    Result = handle_info({http, {reqid, stream_end, headers}}, state),
-    ?assertEqual(Expected, Result).
 
 -endif.

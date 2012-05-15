@@ -1,51 +1,38 @@
 # Twitter Link Processor
 
-This is an application that listens for tweets from your fire hose and
+This is an application that listens for tweets from your firehose and
 publishes the links to delicious.
 
 ## Architecture
    
-The twitterlinks_middleman is responsible for being the liaison
-between the Twitter stream listener service and the Delicious service.
+Each account has one twitterlinks_twitter process and one
+twitterlinks_delicious process assigned to it.  Each account is
+identified by an account id and this account id is used to look up the
+PIDs by account id.
 
-### Supervisor tree
+### Supervisor Tree
 
-Each twitter/delicious account has it's own middleman and middleman
-supervisor.  Linked to the middleman is a twitter stream listener and 
-a delicious gen_server, whose job is to post links to delicious.
+    [TL] = twitterlinks_sup supervisor
+    [TW] = twitterlinks_twitter_sup supervisor
+    [DL] = twitterlinks_delicious_sup supervisor
+    (TW) = twitterlinks_twitter workers
+    (DL) = twitterlinks_delicious workers
+
+      [TL]
+      /  \
+    [DL] [TW]
+     |    |
+     |*   |*
+    (DL) (TW)
 
 
-    [MM_sup]: twitterlinks_middleman_sub
-    (MM): twitterlinks_middleman
-    (TW): twitterlinks_stream_listener
-    (D): twitterlinks_delicious_service
+## Run demo
 
+   make demo
 
-     [MM_sup]
-        | <one_for_one>
-      (MM)
-      /  \ 
-    (TW) (D)
+## Build release
 
-The delicious and twitter services are linked to their middleman, if
-they die, they kill their middleman and its supervisor restarts the
-middleman.
+   make rel
+   $EDITOR rel/twitterlinks/releases/1/sys.config
 
-## Creating a release
-
-    make release
-
-This creates a release of twitterlinks into `rel/twitterlinks`
-
-## Configuring
-
-After creating a release, you will need to configure it
-
-    $EDITOR rel/twitterlinks/releases/1/sys.config 
-
-Fill in the stream_url and delicious properties with your own values.
-
-## Running
-
-    cd rel/twitterlinks
-    ./bin/twitterlinks start
+Add your account to the sys config.

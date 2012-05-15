@@ -1,5 +1,7 @@
 deps
 ebin
 *.dump
+*.beam
 *~
 rel/twitterlinks
+app/*/.eunit
