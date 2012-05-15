@@ -12,3 +12,6 @@ release: compile
 
 clean:
 	./rebar clean
+
+demo:
+	erl -pa deps/*/ebin apps/*/ebin -boot start_sasl -s twitterlinks -config test
