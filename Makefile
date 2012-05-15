@@ -1,9 +1,9 @@
 all: compile
 
-compile: getdeps
+compile: deps
 	rebar compile
 
-getdeps:
+deps: rebar.config
 	rebar get-deps
 
 clean:
@@ -15,5 +15,8 @@ test:
 demo: compile
 	erl -pa deps/*/ebin apps/*/ebin -boot start_sasl -s twitterlinks -config test
 
-rel:
+rel: compile
 	rebar generate
+
+relclean:
+	rm -rf rel/twitterlinks
