@@ -28,11 +28,11 @@ PIDs by account id.
 
 ## Run demo
 
-   make demo
+    make demo
 
 ## Build release
 
-   make rel
-   $EDITOR rel/twitterlinks/releases/1/sys.config
+    make rel
+    $EDITOR rel/twitterlinks/releases/1/sys.config
 
 Add your account to the sys config.
