@@ -11,7 +11,7 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([start_link/4, create/4, start_stream/3]).
+-export([start_link/4, stop/1, create/4, start_stream/3, pid_for/1]).
 -record(state, {account_id, request_id, user_id, username, password}).
 
 %% ------------------------------------------------------------------
@@ -33,14 +33,28 @@ create(AccountId, Username, Password, UserId) ->
     twitterlinks_twitter_sup:start_child(AccountId,
                                          Username, Password, UserId).
 
+pid_for(AccountId) ->
+    gproc:lookup_pid({n,l, {twitter, account_id, AccountId}}).
+    
+stop(AccountId) ->
+    case pid_for(AccountId) of
+        undefined ->
+            {error, not_found};
+        Pid ->
+            gen_server:call(Pid, stop)
+    end.
+            
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
 %% ------------------------------------------------------------------
 
 init([AccountId, Username, Password, UserId]) ->
+    gproc:reg({n, l, {twitter, account_id, AccountId}}, self()),
     {ok, #state{account_id=AccountId, user_id=UserId,
                 username=Username, password=Password}, 0}.
 
+handle_call(stop, _From, State) ->
+    {stop, normal, ok, State};
 handle_call(_Msg, _From, State) ->
     {noreply, State}.
 
@@ -97,5 +111,21 @@ start_stream(Username, Password, UserId) when is_integer(UserId) ->
 
 
 -ifdef(TEST).
+
+pid_for_test_() ->
+    {setup,
+     fun() -> 
+             meck:new(httpc),
+             meck:expect(httpc, request, fun(_,_,_,_) -> {ok, request_id} end),
+             application:start(gproc)
+     end,
+     fun(_) ->
+             meck:unload(httpc),
+             application:stop(gproc)
+     end,
+     ?_test(begin
+                {ok, Pid} = start_link(account_id, "username", "password", 12345),
+                Pid = pid_for(account_id)
+                end)}.
 
 -endif.
