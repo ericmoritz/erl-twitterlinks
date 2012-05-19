@@ -4,4 +4,4 @@ ebin
 *.beam
 *~
 rel/twitterlinks
-app/*/.eunit
+.eunit
