@@ -4,7 +4,7 @@
 -behaviour(supervisor).
 
 %% API
--export([start_link/0]).
+-export([start_link/1]).
 
 %% Supervisor callbacks
 -export([init/1]).
@@ -16,17 +16,18 @@
 %% API functions
 %% ===================================================================
 
-start_link() ->
-    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+start_link(Accounts) ->
+    supervisor:start_link({local, ?MODULE}, ?MODULE, [Accounts]).
 
 %% ===================================================================
 %% Supervisor callbacks
 %% ===================================================================
 
-init(_) ->
+init([Accounts]) ->
     DeliciousSup = ?CHILD(twitterlinks_delicious_sup, supervisor, []),
     TwitterSup = ?CHILD(twitterlinks_twitter_sup, supervisor, []),
+    AccountsWorker = ?CHILD(twitterlinks_accounts, worker, [Accounts]),
 
-    Children = [DeliciousSup, TwitterSup],
-    RestartStrategy = {one_for_one, 4, 3600},
+    Children = [DeliciousSup, TwitterSup, AccountsWorker],
+    RestartStrategy = {one_for_all, 4, 3600},
     {ok, {RestartStrategy, Children}}.

@@ -12,7 +12,7 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([start_link/3, create/3, publish_url/4, pid_for/1]).
+-export([start_link/3, stop/1, create/3, publish_url/4, pid_for/1]).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Exports
@@ -37,17 +37,27 @@ publish_url(AccountId, Url, Description, TagList) ->
     Pid = pid_for(AccountId),
     gen_server:cast(Pid, {publish_url, {Url, Description, TagList}}).
 
+stop(AccountId) ->
+    case pid_for(AccountId) of
+        undefined ->
+            {error, not_found};
+        Pid ->
+            gen_server:call(Pid, stop)
+    end.
+
 pid_for(AccountId) ->
-    gproc:lookup_pid({n,l, {account_id, AccountId}}).
+    gproc:lookup_pid({n,l, {delicious, account_id, AccountId}}).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
 %% ------------------------------------------------------------------
 
 init([AccountId, Username, Password]) ->
-    gproc:reg({n, l, {account_id, AccountId}}, self()),
+    gproc:reg({n, l, {delicious, account_id, AccountId}}, self()),
     {ok, #state{account_id=AccountId, username=Username, password=Password}}.
 
+handle_call(stop, _From, State) ->
+    {stop, normal, ok, State};
 handle_call(state, _From, State) ->
     {reply, State, State};
 handle_call(_Msg, _From, State) ->
