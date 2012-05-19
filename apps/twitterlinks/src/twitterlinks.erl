@@ -1,6 +1,6 @@
 -module(twitterlinks).
 
--export([start/0, add_account/3, del_account/1, publish_tweet/3]).
+-export([start/0, publish_tweet/3]).
 
 %% public API
 
@@ -11,17 +11,6 @@ start() ->
     application:start(inets),
     application:start(gproc),
     application:start(twitterlinks).
-
-add_account(AccountId, {TwitUser, TwitPass, TwitUID},
-            {DelUser, DelPass}) ->
-    twitterlinks_delicious:create(AccountId, DelUser, DelPass),
-    twitterlinks_twitter:create(AccountId, TwitUser, TwitPass, TwitUID),
-    ok.
-
-del_account(AccountId) ->
-    twitterlinks_twitter:stop(AccountId),
-    twitterlinks_delicious:stop(AccountId),
-    ok.
 
 publish_tweet(AccountId, UserId, TweetJSONBin) ->
     Links = twitterlinks_misc:translate_tweet(UserId, TweetJSONBin),

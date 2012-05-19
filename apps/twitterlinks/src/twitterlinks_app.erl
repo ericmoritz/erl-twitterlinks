@@ -10,24 +10,8 @@
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
-    {ok, Pid} = twitterlinks_sup:start_link(),
     {ok, Accounts} = application:get_env(twitterlinks, accounts),
-
-    % starts the configured account pairs
-    start_accounts(Accounts),
-
-    {ok, Pid}.
-
-start_accounts(Accounts) ->
-    lists:foreach(fun(Account) ->
-                          {AccountId, Props} = Account,
-                          TwitterConfig = proplists:get_value(twitter, Props),
-                          DeliciousConfig = proplists:get_value(delicious,
-                                                                Props),
-                          
-                          twitterlinks:add_account(AccountId, TwitterConfig, 
-                                                   DeliciousConfig)
-                  end, Accounts).
+    twitterlinks_sup:start_link(Accounts).
 
 stop(_State) ->
     ok.
