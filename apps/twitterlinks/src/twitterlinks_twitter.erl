@@ -12,7 +12,7 @@
 %% ------------------------------------------------------------------
 
 -export([start_link/4, create/4, start_stream/3]).
--record(state, {account_id, request_id, user_id}).
+-record(state, {account_id, request_id, user_id, username, password}).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Exports
@@ -26,7 +26,8 @@
 %% ------------------------------------------------------------------
 
 start_link(AccountId, Username, Password, UserId) ->
-    gen_server:start_link(?MODULE, [AccountId, Username, Password, UserId], []).
+    gen_server:start_link(?MODULE, [AccountId, Username, Password, UserId],
+                          []).
 
 create(AccountId, Username, Password, UserId) ->
     twitterlinks_twitter_sup:start_child(AccountId,
@@ -37,8 +38,8 @@ create(AccountId, Username, Password, UserId) ->
 %% ------------------------------------------------------------------
 
 init([AccountId, Username, Password, UserId]) ->
-    {ok, ReqId} = start_stream(Username, Password, UserId),
-    {ok, #state{account_id=AccountId, user_id=UserId, request_id=ReqId}}.
+    {ok, #state{account_id=AccountId, user_id=UserId,
+                username=Username, password=Password}, 0}.
 
 handle_call(_Msg, _From, State) ->
     {noreply, State}.
@@ -59,9 +60,16 @@ handle_info({http, {_, stream, TweetJSON}}, State) ->
                                TweetJSON),
     {noreply, State};
 handle_info({http, {_, stream_end, _}}, State) ->
-    % TODO: start the stream again
-    error_logger:info_msg("stream stopped."),
-    {stop, stream_end, State};
+    error_logger:info_msg("stream stopped.~n"),
+    {noreply, State, 0};
+handle_info({http, {_, {error, Reason}}}, State) ->
+    error_logger:info_msg("stream error ~p~n", [Reason]),
+    {noreply, State, 1000};
+handle_info(timeout, #state{username = Username,
+                            password = Password,
+                            user_id = UserId} = State) ->
+    {ok, ReqId} = start_stream(Username, Password, UserId),
+    {noreply, State#state{request_id=ReqId}};
 handle_info(Msg, State) ->
     error_logger:warning_msg("Unknown Message: ~p~n", [Msg]),
     {noreply, State}.
@@ -77,7 +85,8 @@ code_change(_OldVsn, State, _Extra) ->
 %% ------------------------------------------------------------------
 
 start_stream(Username, Password, UserId) when is_integer(UserId) ->
-    Url = "https://stream.twitter.com/1/statuses/filter.json?follow=" ++ integer_to_list(UserId),
+    Url = "https://stream.twitter.com/1/statuses/filter.json?follow="
+        ++ integer_to_list(UserId),
     Headers = [twitterlinks_misc:http_auth_header(basic, Username, Password)],
 
     io:format("Starting Stream ~s ~p ~n", [Url, Headers]),
