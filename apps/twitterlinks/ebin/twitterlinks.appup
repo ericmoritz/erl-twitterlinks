@@ -1,0 +1,40 @@
+% -* erlang -*-
+{"0.2",
+        [{"1",
+          [
+           {add_module, twitterlinks_delicious_request},
+           {add_module, twitterlinks_accounts},
+           {load_module, twitterlinks},
+
+           {load_module, twitterlinks_app},
+
+           {update, twitterlinks_twitter, {advanced,[]}, 
+            [twitterlinks,
+             twitterlinks_delicious,
+             twitterlinks_delicious_request]},
+
+           {update, twitterlinks_delicious, {advanced, []},
+            [twitterlinks,
+             twitterlinks_delicious,
+             twitterlinks_delicious_request]},
+
+           {update, twitterlinks_sup, supervisor}]},
+         {"1",
+          [
+           {delete_module, twitterlinks_delicious_request},
+           {delete_module, twitterlinks_accounts},
+           {load_module, twitterlinks},
+           {load_module, twitterlinks_app},
+
+           {update, twitterlinks_twitter, {advanced,[]}, 
+            [twitterlinks,
+             twitterlinks_delicious,
+             twitterlinks_delicious_request]},
+
+           {update, twitterlinks_delicious, {advanced, []},
+            [twitterlinks,
+             twitterlinks_delicious,
+             twitterlinks_delicious_request]},
+
+           {update, twitterlinks_sup, supervisor}]}]}.
+
