@@ -91,6 +91,20 @@ handle_info(Msg, State) ->
 terminate(_Reason, _State) ->
     ok.
 
+code_change({down, "0.2"}, State, _Extra) ->
+    {state, AccountId, RequestId, UserId, _, _} = State,
+    OldState = {state, AccountId, RequestId, UserId},
+    {ok, OldState};
+%% The initial version was 1, we now use Major.Minor.Micro
+code_change("1", State, _Extra) ->
+    Accounts = application:get_env(twitterlinks, accounts),
+    {state, AccountId, RequestId, _UserId} = State,
+
+    {_, Account} = proplists:lookup(AccountId),
+    {_, {Username, Password, UserId}} = proplists:lookup(twitter, Account),
+
+    NewState = {state, AccountId, RequestId, UserId, Username, Password},
+    {ok, NewState};
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
