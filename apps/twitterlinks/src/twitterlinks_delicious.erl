@@ -31,7 +31,14 @@ start_link(AccountId, Username, Password) ->
     gen_server:start_link(?MODULE, [AccountId, Username, Password], []).
 
 create(AccountId, Username, Password) ->
-    twitterlinks_delicious_sup:start_child(AccountId, Username, Password).
+    case pid_for(AccountId) of
+        undefined ->
+            twitterlinks_delicious_sup:start_child(AccountId, Username,
+                                                   Password);
+        Pid ->
+            {ok, Pid}
+    end.
+    
 
 publish_url(AccountId, Url, Description, TagList) ->
     Pid = pid_for(AccountId),
@@ -46,7 +53,7 @@ stop(AccountId) ->
     end.
 
 pid_for(AccountId) ->
-    gproc:lookup_pid({n,l, {delicious, account_id, AccountId}}).
+    gproc:where({n,l, {delicious, account_id, AccountId}}).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions

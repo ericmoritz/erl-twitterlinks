@@ -10,8 +10,7 @@
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
-    {ok, Accounts} = application:get_env(twitterlinks, accounts),
-    twitterlinks_sup:start_link(Accounts).
+    twitterlinks_sup:start_link().
 
 stop(_State) ->
     ok.

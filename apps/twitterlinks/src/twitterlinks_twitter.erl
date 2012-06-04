@@ -30,11 +30,16 @@ start_link(AccountId, Username, Password, UserId) ->
                           []).
 
 create(AccountId, Username, Password, UserId) ->
-    twitterlinks_twitter_sup:start_child(AccountId,
-                                         Username, Password, UserId).
+    case pid_for(AccountId) of
+        undefined ->
+            twitterlinks_twitter_sup:start_child(AccountId,
+                                                 Username, Password, UserId);
+        Pid ->
+            {ok, Pid}
+    end.
 
 pid_for(AccountId) ->
-    gproc:lookup_pid({n,l, {twitter, account_id, AccountId}}).
+    gproc:where({n,l, {twitter, account_id, AccountId}}).
     
 stop(AccountId) ->
     case pid_for(AccountId) of

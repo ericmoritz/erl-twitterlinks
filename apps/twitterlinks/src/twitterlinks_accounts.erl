@@ -8,7 +8,7 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([start_link/1, add_account/3, stop_account/1]).
+-export([start_link/0, add_account/3, stop_account/1]).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Exports
@@ -21,7 +21,8 @@
 %% API Function Definitions
 %% ------------------------------------------------------------------
 
-start_link(Accounts) ->
+start_link() ->
+    {ok, Accounts} = application:get_env(twitterlinks, accounts),
     gen_server:start_link({local, ?SERVER}, ?MODULE, [Accounts], []).
 
 add_account(AccountId, TwitCred, DelCred) ->
